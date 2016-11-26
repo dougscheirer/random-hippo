@@ -1,0 +1,11 @@
+#!/usr/bin/python
+
+from gpiozero import Button
+from signal import pause
+import sys
+
+button=Button(int(sys.argv[1]))
+
+retval=button.wait_for_press(60)
+print(retval)
+

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:        random-hippo 
+# Required-Start:  
+# Required-Stop:   
+# Default-Start:   2 3 4 5
+# Default-Stop: 
+# Short-Description: Start random-hippo daemon
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+. /lib/lsb/init-functions
+
+case $1 in
+	start)
+		/bin/bash /etc/init.d/random-hippo &
+		PID=$!
+		echo "$PID" > /var/run/random-hippo
+		exit 0
+		;;
+	stop)
+		kill $(cat /var/run/random-hippo)
+		killall omxplayer omxplayer.bin festival audsp
+		exit 0
+		;;
+esac
+
+amixer set PCM -- 100%
+
+while (true) ; do
+	# turn led on while playing
+	/usr/local/bin/bash-led.sh 18 1
+	omxplayer /home/pi/hippo-one.mp3
+	/usr/local/bin/bash-led.sh 18 0
+	REALRAND=$(od -A n -t d -N 1 /dev/urandom)
+	SLEEPTIME=900
+	echo "Next play in $SLEEPTIME seconds"
+	python /usr/local/bin/button-or-sleep.py $SLEEPTIME
+	RLINES=$(od -A n -t d -N 3 /dev/urandom)
+	RSTART=$((RLINES%80))
+	sed -n $RSTART,$((RSTART+1))p /home/pi/hippos.txt | festival --tts
+done
+

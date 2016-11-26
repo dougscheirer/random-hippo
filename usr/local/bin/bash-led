@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# $1 = pin number
+# $2 = state (0 for off, 1 for on)
+
+echo "$1" > /sys/class/gpio/export
+echo "out" > /sys/class/gpio/gpio$1/direction
+
+echo "$2" > /sys/class/gpio/gpio$1/value
+
