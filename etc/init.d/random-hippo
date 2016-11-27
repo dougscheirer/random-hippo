@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set +e
+
 ### BEGIN INIT INFO
 # Provides:        random-hippo 
 # Required-Start:  
@@ -22,7 +24,7 @@ case $1 in
 		;;
 	stop)
 		kill $(cat /var/run/random-hippo)
-		killall omxplayer omxplayer.bin festival audsp
+		killall mpg321 festival audsp
 		exit 0
 		;;
 esac
@@ -31,9 +33,9 @@ amixer set PCM -- 100%
 
 while (true) ; do
 	# turn led on while playing
-	/usr/local/bin/bash-led.sh 18 1
-	omxplayer /home/pi/hippo-one.mp3
-	/usr/local/bin/bash-led.sh 18 0
+	/usr/local/bin/bash-led 18 1
+	mpg321 /home/pi/hippo-one.mp3 2>&1 | logger
+	/usr/local/bin/bash-led 18 0
 	REALRAND=$(od -A n -t d -N 1 /dev/urandom)
 	SLEEPTIME=900
 	echo "Next play in $SLEEPTIME seconds"
