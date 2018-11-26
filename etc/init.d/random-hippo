@@ -3,17 +3,28 @@
 set +e
 
 ### BEGIN INIT INFO
-# Provides:        random-hippo 
-# Required-Start:  
-# Required-Stop:   
+# Provides:        random-hippo
+# Required-Start:
+# Required-Stop:
 # Default-Start:   2 3 4 5
-# Default-Stop: 
+# Default-Stop:
 # Short-Description: Start random-hippo daemon
 ### END INIT INFO
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 . /lib/lsb/init-functions
+
+LEDPORT=18
+GPIOON=1
+GPIOOFF=0
+SLEEPTIME=900
+
+function random
+{
+	UNBOUND=$(od -A n -t d -N 3 /dev/urandom)
+	echo $(($UNBOUND%$1))
+}
 
 case $1 in
 	start)
@@ -31,17 +42,40 @@ esac
 
 amixer set PCM -- 100%
 
+SRC=/home/pi
+
 while (true) ; do
+	JOKECNT=$(wc -l < $SRC/hippo-jokes.txt)
+	FACTCNT=$(wc -l < $SRC/hippos.txt)
+	JOKECNT=$((JOKECNT+1))
+	FACTCNT=$((FACTCNT+1))
+
 	# turn led on while playing
-	/usr/local/bin/bash-led 18 1
-	mpg321 /home/pi/hippo-one.mp3 2>&1 | logger
-	/usr/local/bin/bash-led 18 0
-	REALRAND=$(od -A n -t d -N 1 /dev/urandom)
-	SLEEPTIME=900
+	/usr/local/bin/bash-led $LEDPORT $GPIOON
+	mpg321 $SRC/hippo-one.mp3 2>&1 | logger
+	/usr/local/bin/bash-led $LEDPORT $GPIOOFF
 	echo "Next play in $SLEEPTIME seconds"
 	python /usr/local/bin/button-or-sleep.py $SLEEPTIME
-	RLINES=$(od -A n -t d -N 3 /dev/urandom)
-	RSTART=$((RLINES%80))
-	sed -n $RSTART,$((RSTART+1))p /home/pi/hippos.txt | festival --tts
+	# tell jokes or read facts?
+	JOKES=$(random 2)
+	if [ $JOKES -eq 1 ] ; then
+		echo "Here are some hippo jokes to lighten up the mood" | festival --tts
+		sleep 0.5
+		# pick 8 random jokes, no repeats
+		JOKES=($(shuf -i 1-$JOKECNT -n 8))
+		for JOKE in "${JOKES[@]}" ; do
+			# parse the joke and the answer
+			JOKETEXT=$(sed -n $JOKEp /home/pi/hippo-jokes.txt)
+			JOKE=$(echo $JOKETEXT | sed 's/Q: \([^?]*\).*/\1/')
+			ANS=$(echo $JOKETEXT | sed 's/Q: [^?]*? A: \(.*\)/\1/')
+			echo "$JOKE?" | festival --tts
+			sleep 1
+			echo  "$ANS" | festival --tts
+			sleep 1
+		done
+	else
+		RSTART=$(random $FACTCNT)
+		sed -n $RSTART,$((RSTART+1))p /home/pi/hippos.txt | festival --tts
+	fi
 done
 
