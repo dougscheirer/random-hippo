@@ -65,7 +65,7 @@ while (true) ; do
 		JOKES=($(shuf -i 1-$JOKECNT -n 8))
 		for JOKE in "${JOKES[@]}" ; do
 			# parse the joke and the answer
-			JOKETEXT=$(sed -n $JOKEp /home/pi/hippo-jokes.txt)
+			JOKETEXT=$(sed -n "$JOKE"p $SRC/hippo-jokes.txt)
 			JOKE=$(echo $JOKETEXT | sed 's/Q: \([^?]*\).*/\1/')
 			ANS=$(echo $JOKETEXT | sed 's/Q: [^?]*? A: \(.*\)/\1/')
 			echo "$JOKE?" | festival --tts
@@ -75,7 +75,7 @@ while (true) ; do
 		done
 	else
 		RSTART=$(random $FACTCNT)
-		sed -n $RSTART,$((RSTART+1))p /home/pi/hippos.txt | festival --tts
+		sed -n $RSTART,$((RSTART+1))p $SRC/hippos.txt | festival --tts
 	fi
 done
 
