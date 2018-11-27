@@ -11,7 +11,7 @@ set +e
 # Short-Description: Start random-hippo daemon
 ### END INIT INFO
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 
 . /lib/lsb/init-functions
 
@@ -20,12 +20,52 @@ GPIOON=1
 GPIOOFF=0
 SLEEPTIME=900
 
+# for testing, change SRC
+# SRC=~/tmp/random-hippo/home/pi
+# for production, it's in /home/pi
+SRC=/home/pi
+
 function random
 {
 	UNBOUND=$(od -A n -t d -N 3 /dev/urandom)
 	echo $(($UNBOUND%$1))
 }
 
+function say
+{
+	ESCAPED=$(echo $* | sed 's/\"/\\"/g')
+	festival -b '(SayText "'"$ESCAPED"'")'
+}
+
+function playFacts
+{
+	say "Here is a fun hippo fact"
+	FACTCNT=$(wc -l < $SRC/hippos.txt)
+	RSTART=$(random $((FACTCNT+1)))
+	say $(sed -n $RSTART,$((RSTART+1))p $SRC/hippos.txt)
+}
+
+function playJokes
+{
+	JOKECNT=$(wc -l < $SRC/hippo-jokes.txt)
+	echo "Here are some hippo jokes to lighten up the mood" | festival --tts
+
+	sleep 0.5
+	# pick 8 random jokes, no repeats
+	JOKES=($(shuf -i 1-$((JOKECNT+1)) -n 8))
+	for JOKE in "${JOKES[@]}" ; do
+		# parse the joke and the answer
+		JOKETEXT=$(sed -n "$JOKE"p $SRC/hippo-jokes.txt)
+		JOKE=$(echo $JOKETEXT | sed 's/Q: \([^?]*\).*/\1/')
+		ANS=$(echo $JOKETEXT | sed 's/Q: [^?]*? A: \(.*\)/\1/')
+		say "$JOKE"
+		sleep 1
+		say "$ANS"
+		sleep 1
+	done
+}
+
+# this forks or kills the fork for start | stop, otherwise, run!
 case $1 in
 	start)
 		/bin/bash /etc/init.d/random-hippo &
@@ -42,40 +82,20 @@ esac
 
 amixer set PCM -- 100%
 
-SRC=/home/pi
-
 while (true) ; do
-	JOKECNT=$(wc -l < $SRC/hippo-jokes.txt)
-	FACTCNT=$(wc -l < $SRC/hippos.txt)
-	JOKECNT=$((JOKECNT+1))
-	FACTCNT=$((FACTCNT+1))
-
-	# turn led on while playing
-	/usr/local/bin/bash-led $LEDPORT $GPIOON
-	mpg321 $SRC/hippo-one.mp3 2>&1 | logger
-	/usr/local/bin/bash-led $LEDPORT $GPIOOFF
+	# turn led on while playing the song
+	bash-led $LEDPORT $GPIOON
+	echo "mpg321 $SRC/hippo-one.mp3 2>&1 | logger"
+	bash-led $LEDPORT $GPIOOFF
 	echo "Next play in $SLEEPTIME seconds"
 	python /usr/local/bin/button-or-sleep.py $SLEEPTIME
+
 	# tell jokes or read facts?
 	JOKES=$(random 2)
 	if [ $JOKES -eq 1 ] ; then
-		echo "Here are some hippo jokes to lighten up the mood" | festival --tts
-		sleep 0.5
-		# pick 8 random jokes, no repeats
-		JOKES=($(shuf -i 1-$JOKECNT -n 8))
-		for JOKE in "${JOKES[@]}" ; do
-			# parse the joke and the answer
-			JOKETEXT=$(sed -n "$JOKE"p $SRC/hippo-jokes.txt)
-			JOKE=$(echo $JOKETEXT | sed 's/Q: \([^?]*\).*/\1/')
-			ANS=$(echo $JOKETEXT | sed 's/Q: [^?]*? A: \(.*\)/\1/')
-			echo "$JOKE?" | festival --tts
-			sleep 1
-			echo  "$ANS" | festival --tts
-			sleep 1
-		done
+		playJokes
 	else
-		RSTART=$(random $FACTCNT)
-		sed -n $RSTART,$((RSTART+1))p $SRC/hippos.txt | festival --tts
+		playFacts
 	fi
 done
 
