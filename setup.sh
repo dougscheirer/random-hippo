@@ -14,7 +14,7 @@ function die()
 
 # turn on sshd by default
 
-# run raspberry pi configuration module
+# run raspberry pi configuration module (for keyboard configuration)
 raspi-config
 
 # copy all of the files to the correct locations
