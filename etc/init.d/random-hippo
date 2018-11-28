@@ -18,12 +18,16 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 LEDPORT=18
 GPIOON=1
 GPIOOFF=0
-SLEEPTIME=900
+SLEEPTIME=120
 
 # for testing, change SRC
-# SRC=~/tmp/random-hippo/home/pi
 # for production, it's in /home/pi
-SRC=/home/pi
+if [ $USER == 'pi' ]; then
+	SRC=/home/pi
+else
+	SRC=$(pwd)/home/pi
+fi
+
 
 function random
 {
@@ -34,7 +38,7 @@ function random
 function say
 {
 	ESCAPED=$(echo $* | sed 's/\"/\\"/g')
-	festival -b '(SayText "'"$ESCAPED"'")'
+	festival -b '(voice_ked_diphone)' '(SayText "'"$ESCAPED"'")'
 }
 
 function playFacts
@@ -42,13 +46,14 @@ function playFacts
 	say "Here is a fun hippo fact"
 	FACTCNT=$(wc -l < $SRC/hippos.txt)
 	RSTART=$(random $((FACTCNT+1)))
+	echo "Fact: $FACTCNT / $RSTART"
 	say $(sed -n $RSTART,$((RSTART+1))p $SRC/hippos.txt)
 }
 
 function playJokes
 {
 	JOKECNT=$(wc -l < $SRC/hippo-jokes.txt)
-	echo "Here are some hippo jokes to lighten up the mood" | festival --tts
+	say "Here are some hippo jokes to lighten up the mood"
 
 	sleep 0.5
 	# pick 8 random jokes, no repeats
@@ -85,10 +90,10 @@ amixer set PCM -- 100%
 while (true) ; do
 	# turn led on while playing the song
 	bash-led $LEDPORT $GPIOON
-	echo "mpg321 $SRC/hippo-one.mp3 2>&1 | logger"
+	mpg321 $SRC/hippo-one.mp3 2>&1 | logger
 	bash-led $LEDPORT $GPIOOFF
 	echo "Next play in $SLEEPTIME seconds"
-	python /usr/local/bin/button-or-sleep.py $SLEEPTIME
+	python button-or-sleep.py $SLEEPTIME
 
 	# tell jokes or read facts?
 	JOKES=$(random 2)
