@@ -37,8 +37,15 @@ function random
 
 function say
 {
-	ESCAPED=$(echo $* | sed 's/\"/\\"/g')
-	festival -b '(voice_ked_diphone)' '(SayText "'"$ESCAPED"'")'
+	# write commands to a temp file, then play it
+	TMPFILE=$(mktemp /tmp/festival-say.XXXXXX)
+	# use the . char to briefly pause festival in sentences
+	ESCAPED=$(echo $* | sed -e 's/\"/\\"/g')
+	echo '(voice_cmu_us_slt_arctic_hts)' >> $TMPFILE
+	echo '(SayText "'$ESCAPED'")' >> $TMPFILE
+	echo '(exit)' >> $TMPFILE
+	festival $TMPFILE
+	rm $TMPFILE
 }
 
 function playFacts
@@ -70,6 +77,7 @@ function playJokes
 	done
 }
 
+MUSIC=1
 # this forks or kills the fork for start | stop, otherwise, run!
 case $1 in
 	start)
@@ -83,6 +91,10 @@ case $1 in
 		killall mpg321 festival audsp
 		exit 0
 		;;
+	nomusic)
+		MUSIC=0
+		# keep going
+		;;
 esac
 
 amixer set PCM -- 100%
@@ -90,14 +102,19 @@ amixer set PCM -- 100%
 while (true) ; do
 	# turn led on while playing the song
 	bash-led $LEDPORT $GPIOON
-	mpg321 $SRC/hippo-one.mp3 2>&1 | logger
+	if [ $MUSIC -eq 1 ] ; then
+		say "Now some music!"
+		mpg321 $SRC/hippo-one.mp3 2>&1 | logger
+	fi
 	bash-led $LEDPORT $GPIOOFF
 	echo "Next play in $SLEEPTIME seconds"
 	python button-or-sleep.py $SLEEPTIME
 
 	# tell jokes or read facts?
-	JOKES=$(random 2)
-	if [ $JOKES -eq 1 ] ; then
+	# set the number to 2 or above, and negate the if to prefer one over the other
+	JOKES=$(random 5)
+	# jokes 4/5 times
+	if [ ! $JOKES -eq 1 ] ; then
 		playJokes
 	else
 		playFacts
