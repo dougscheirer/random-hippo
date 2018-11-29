@@ -1,3 +1,16 @@
 #!/bin/bash
 
-echo "$*" | festival --tts
+function say
+{
+	# write the output to a WAV file and play the file
+	TMPFILE=$(mktemp /tmp/festival-say.XXXXXX)
+	logit "flite -voice slt -o $TMPFILE $*"
+	# -o WAV file
+	flite -voice slt -o $TMPFILE "$* "
+	# use aplay for WAV
+	aplay $TMPFILE
+	# delete the file
+	rm $TMPFILE
+}
+
+say "$*"

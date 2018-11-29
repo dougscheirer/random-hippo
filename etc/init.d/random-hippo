@@ -16,6 +16,8 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 . /lib/lsb/init-functions
 
 LEDPORT=18
+BUTTONPORT=23
+
 GPIOON=1
 GPIOOFF=0
 SLEEPTIME=120
@@ -144,8 +146,9 @@ while (true) ; do
 		mpg321 $SRC/hippo-one.mp3 2>&1 | logger
 		bash-led $LEDPORT $GPIOOFF || say "Error: could not turn off LED"
 	fi
+
 	logit "Next play in $SLEEPTIME seconds"
-	python button-or-sleep.py $SLEEPTIME || say "Error: could not find the sleep program"
+	python button-or-sleep.py $SLEEPTIME $LEDPORT $BUTTONPORT || say "Error: could not find the sleep program"
 
 	# tell jokes or read facts?
 	if [ $JUSTJOKES -eq 1 ] ; then
