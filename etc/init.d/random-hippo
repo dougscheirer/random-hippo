@@ -19,6 +19,7 @@ LEDPORT=18
 GPIOON=1
 GPIOOFF=0
 SLEEPTIME=120
+LOGGER=1
 
 # for testing, change SRC
 # for production, it's in /home/pi
@@ -28,6 +29,14 @@ else
 	SRC=$(pwd)/home/pi
 fi
 
+function logit
+{
+	if [ $LOGGER -eq 0 ] ; then
+		echo "$*"
+	else
+		echo "$*" | logger
+	fi
+}
 
 function random
 {
@@ -37,25 +46,30 @@ function random
 
 function say
 {
-	# write commands to a temp file, then play it
-	# TMPFILE=$(mktemp /tmp/festival-say.XXXXXX)
-	# use the . char to briefly pause festival in sentences
-	# ESCAPED=$(echo $* | sed -e 's/\"/\\"/g')
-        # echo '(voice_cmu_us_slt_arctic_hts)' >> $TMPFILE
-	# echo '(SayText "'$ESCAPED'")' >> $TMPFILE
-	# echo '(exit)' >> $TMPFILE
-	# festival $TMPFILE
-	# rm $TMPFILE
-	echo "$*" | logger
-	flite -voice slt "$*"
+	# write the output to a WAV file and play the file
+	TMPFILE=$(mktemp /tmp/festival-say.XXXXXX)
+	logit "flite -voice slt -o $TMPFILE $*"
+	# -o WAV file
+	flite -voice slt -o $TMPFILE "$* "
+	# use aplay for WAV
+	aplay $TMPFILE
+	# delete the file
+	rm $TMPFILE
 }
 
 function playFacts
 {
+	ALL=$1
+
+	if [ "$ALL" == "0" ] ; then
+		while read FACT ; do say "$FACT"; done < $SRC/hippos.txt
+		return
+	fi
+
 	say "Here is a fun hippo fact"
 	FACTCNT=$(wc -l < $SRC/hippos.txt)
 	RSTART=$(random $((FACTCNT+1)))
-	echo "Fact: $FACTCNT / $RSTART"
+	logit "Fact: $FACTCNT / $RSTART"
 	say $(sed -n $RSTART,$((RSTART+1))p $SRC/hippos.txt)
 }
 
@@ -66,7 +80,14 @@ function playJokes
 
 	sleep 0.5
 	# pick 8 random jokes, no repeats
-	JOKES=($(shuf -i 1-$((JOKECNT+1)) -n 8))
+	ALL=$1
+
+	if [ "$ALL" == "0" ] ; then
+		JOKES=($(seq 1 1 $((JOKECNT+1))))
+	else
+		JOKES=($(shuf -i 1-$((JOKECNT+1)) -n 8))
+	fi
+
 	for JOKE in "${JOKES[@]}" ; do
 		# parse the joke and the answer
 		JOKETEXT=$(sed -n "$JOKE"p $SRC/hippo-jokes.txt)
@@ -80,6 +101,9 @@ function playJokes
 }
 
 MUSIC=1
+JUSTJOKES=0
+JUSTFACTS=0
+
 # this forks or kills the fork for start | stop, otherwise, run!
 case $1 in
 	start)
@@ -95,31 +119,48 @@ case $1 in
 		;;
 	nomusic)
 		MUSIC=0
+		LOGGER=0
 		# keep going
+		;;
+	jokes)
+		MUSIC=0
+		LOGGER=0
+		JUSTJOKES=1
+		;;
+	facts)
+		MUSIC=0
+		LOGGER=0
+		JUSTFACTS=1
 		;;
 esac
 
 amixer set PCM -- 100%
 
 while (true) ; do
-	# turn led on while playing the song
-	bash-led $LEDPORT $GPIOON
 	if [ $MUSIC -eq 1 ] ; then
+		# turn led on while playing the song
+		bash-led $LEDPORT $GPIOON || say "Error: could not turn on LED"
 		say "Now some music!"
 		mpg321 $SRC/hippo-one.mp3 2>&1 | logger
+		bash-led $LEDPORT $GPIOOFF || say "Error: could not turn off LED"
 	fi
-	bash-led $LEDPORT $GPIOOFF
-	echo "Next play in $SLEEPTIME seconds"
-	python button-or-sleep.py $SLEEPTIME
+	logit "Next play in $SLEEPTIME seconds"
+	python button-or-sleep.py $SLEEPTIME || say "Error: could not find the sleep program"
 
 	# tell jokes or read facts?
-	# set the number to 2 or above, and negate the if to prefer one over the other
-	JOKES=$(random 5)
-	# jokes 4/5 times
-	if [ ! $JOKES -eq 1 ] ; then
-		playJokes
+	if [ $JUSTJOKES -eq 1 ] ; then
+		playJokes 0
+	elif [ $JUSTFACTS -eq 1 ] ; then
+		playFacts 0
 	else
-		playFacts
+		# set the number to 2 or above, and negate the if to prefer one over the other
+		JOKES=$(random 3)
+		# jokes 4/5 times
+		if [ ! $JOKES -eq 1 ] ; then
+			playJokes
+		else
+			playFacts
+		fi
 	fi
 done
 
