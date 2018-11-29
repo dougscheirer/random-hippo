@@ -38,14 +38,15 @@ function random
 function say
 {
 	# write commands to a temp file, then play it
-	TMPFILE=$(mktemp /tmp/festival-say.XXXXXX)
+	# TMPFILE=$(mktemp /tmp/festival-say.XXXXXX)
 	# use the . char to briefly pause festival in sentences
-	ESCAPED=$(echo $* | sed -e 's/\"/\\"/g')
-	echo '(voice_cmu_us_slt_arctic_hts)' >> $TMPFILE
-	echo '(SayText "'$ESCAPED'")' >> $TMPFILE
-	echo '(exit)' >> $TMPFILE
-	festival $TMPFILE
-	rm $TMPFILE
+	# ESCAPED=$(echo $* | sed -e 's/\"/\\"/g')
+        # echo '(voice_cmu_us_slt_arctic_hts)' >> $TMPFILE
+	# echo '(SayText "'$ESCAPED'")' >> $TMPFILE
+	# echo '(exit)' >> $TMPFILE
+	# festival $TMPFILE
+	# rm $TMPFILE
+	flite -voice slt "$*"
 }
 
 function playFacts

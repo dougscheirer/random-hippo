@@ -18,12 +18,12 @@ function die()
 raspi-config
 
 # copy all of the files to the correct locations
-cp -r etc /etc || die "Failed to copy /etc files"
-cp -r usr /usr || die "Failed to copy /usr files"
-cp -r home/pi /home/pi && chown pi:pi /home/pi/* || die "Failed to copy /home/pi files"
+cp -r etc/* /etc || die "Failed to copy /etc files"
+cp -r usr/* /usr || die "Failed to copy /usr files"
+cp -r home/pi/* /home/pi && chown -R pi:pi /home/pi/* || die "Failed to copy /home/pi files"
 
-# install festival, amixer (?)
-apt-get install -y festival amixer mpg321 audsp || die "Failed to install packages"
+# install mpg321, alsa-utils, and espeak
+apt-get install flite alsa-utils mpg321 || die "Failed to install packages"
 
 # configure wifi (https://learn.adafruit.com/adafruits-raspberry-pi-lesson-3-network-setup/setting-up-wifi-with-occidentalis)
 echo -n "Enter your SSID: "
