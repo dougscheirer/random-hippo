@@ -46,6 +46,7 @@ function say
 	# echo '(exit)' >> $TMPFILE
 	# festival $TMPFILE
 	# rm $TMPFILE
+	echo "$*" | logger
 	flite -voice slt "$*"
 }
 
