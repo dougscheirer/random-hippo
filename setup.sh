@@ -14,7 +14,7 @@ function die()
 
 # turn on sshd by default
 
-# run raspberry pi configuration module (for keyboard configuration)
+# run raspberry pi configuration module (for keyboard cnd wifi onfiguration)
 raspi-config
 
 # copy all of the files to the correct locations
@@ -23,7 +23,7 @@ cp -r usr/* /usr || die "Failed to copy /usr files"
 cp -r home/pi/* /home/pi && chown -R pi:pi /home/pi/* || die "Failed to copy /home/pi files"
 
 # install mpg321, alsa-utils, and espeak
-apt-get install flite alsa-utils mpg321 || die "Failed to install packages"
+apt-get install flite alsa-utils mpg321 python-gpiozero || die "Failed to install packages"
 
 # configure wifi (https://learn.adafruit.com/adafruits-raspberry-pi-lesson-3-network-setup/setting-up-wifi-with-occidentalis)
 echo -n "Enter your SSID: "

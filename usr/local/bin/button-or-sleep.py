@@ -16,13 +16,16 @@ def flash(led, interval, count):
 
 try:
 	wait_time = sys.argv[1]
-	led=sys.argv[2]
-	button=sys.argv[3]
+	ledport=sys.argv[2]
+	buttonport=sys.argv[3]
 except:
 	# give up or use default values?
 	wait_time = 1000
-	led = 18
-	button = 23
+	ledport = 18
+	buttonport = 23
+
+led=LED(ledport)
+button=Button(buttonport)
 
 flash(led, 0.5, 4)
 retval=button.wait_for_press(int(wait_time))
