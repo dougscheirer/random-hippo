@@ -26,20 +26,21 @@ cp -r home/pi/* /home/pi && chown -R pi:pi /home/pi/* || die "Failed to copy /ho
 apt-get install flite alsa-utils mpg321 python-gpiozero || die "Failed to install packages"
 
 # configure wifi (https://learn.adafruit.com/adafruits-raspberry-pi-lesson-3-network-setup/setting-up-wifi-with-occidentalis)
-echo -n "Enter your SSID: "
-read SSID
-echo -n "Enter your password: "
-read -s PASSWORD
-
-cat << EOF >> /etc/network/interfaces
-
-allow-hotplug wlan0
-auto wlan0
-
-iface wlan0 inet dhcp
-        wpa-ssid "$SSID"
-        wpa-psk "$PASSWORD"
-EOF
+# echo -n "Enter your SSID: "
+# read SSID
+# echo -n "Enter your password: "
+# read -s PASSWORD
+#
+# raspi-config does a way better job of this
+# cat << EOF >> /etc/network/interfaces
+#
+# allow-hotplug wlan0
+# auto wlan0
+#
+# iface wlan0 inet dhcp
+#        wpa-ssid "$SSID"
+#        wpa-psk "$PASSWORD"
+# EOF
 
 # set random-hippo to run by default on startup
 update-rc.d random-hippo defaults || die "Failed to set random-hippo to on by default"
