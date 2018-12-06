@@ -25,11 +25,13 @@ LOGGER=1
 
 # for testing, change SRC
 # for production, it's in /home/pi
-if [ $USER == 'pi' ]; then
+if [ "$USER" == 'pi' ]; then
 	SRC=/home/pi
 else
 	SRC=$(pwd)/home/pi
 fi
+
+echo "SRC: $SRC"
 
 function logit
 {
@@ -139,30 +141,42 @@ esac
 amixer set PCM -- 100%
 
 while (true) ; do
-	if [ $MUSIC -eq 1 ] ; then
-		# turn led on while playing the song
-		bash-led $LEDPORT $GPIOON || say "Error: could not turn on LED"
-		say "Now some music!"
-		mpg321 $SRC/hippo-one.mp3 2>&1 | logger
-		bash-led $LEDPORT $GPIOOFF || say "Error: could not turn off LED"
+	hour=$(date +%H)
+	playit=0
+	if [ $hour -gt 16 -a $hour -lt 22 ] ; then
+		playit=1
+	fi
+
+	if [ $playit -eq 1 ]; then	
+		if [ $MUSIC -eq 1 ] ; then
+			# turn led on while playing the song
+			bash-led $LEDPORT $GPIOON || say "Error: could not turn on LED"
+			say "Now some music!"
+			mpg321 $SRC/hippo-one.mp3 2>&1 | logger
+			bash-led $LEDPORT $GPIOOFF || say "Error: could not turn off LED"
+		fi
+	else
+		logit "skipping play for time reasons"
 	fi
 
 	logit "Next play in $SLEEPTIME seconds"
-	python button-or-sleep.py $SLEEPTIME $LEDPORT $BUTTONPORT || say "Error: could not find the sleep program"
+	button-or-sleep.py $SLEEPTIME $LEDPORT $BUTTONPORT || say "Error: could not find the sleep program"
 
-	# tell jokes or read facts?
-	if [ $JUSTJOKES -eq 1 ] ; then
-		playJokes 0
-	elif [ $JUSTFACTS -eq 1 ] ; then
-		playFacts 0
-	else
-		# set the number to 2 or above, and negate the if to prefer one over the other
-		JOKES=$(random 3)
-		# jokes 4/5 times
-		if [ ! $JOKES -eq 1 ] ; then
-			playJokes
+	if [ $playit -eq 1 ] ; then		
+		# tell jokes or read facts?
+		if [ $JUSTJOKES -eq 1 ] ; then
+			playJokes 0
+		elif [ $JUSTFACTS -eq 1 ] ; then
+			playFacts 0
 		else
-			playFacts
+			# set the number to 2 or above, and negate the if to prefer one over the other
+			JOKES=$(random 3)
+			# jokes 4/5 times
+			if [ ! $JOKES -eq 1 ] ; then
+				playJokes
+			else
+				playFacts
+			fi
 		fi
 	fi
 done
