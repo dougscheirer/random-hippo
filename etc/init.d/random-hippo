@@ -148,7 +148,7 @@ while (true) ; do
 	fi
 
 	logit "Next play in $SLEEPTIME seconds"
-	python button-or-sleep.py $SLEEPTIME $LEDPORT $BUTTONPORT || say "Error: could not find the sleep program"
+	button-or-sleep.py $SLEEPTIME $LEDPORT $BUTTONPORT || say "Error: could not find the sleep program"
 
 	# tell jokes or read facts?
 	if [ $JUSTJOKES -eq 1 ] ; then

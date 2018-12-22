@@ -24,8 +24,8 @@ except:
 	ledport = 18
 	buttonport = 23
 
-led=LED(ledport)
-button=Button(buttonport)
+led=LED(int(ledport))
+button=Button(int(buttonport))
 
 flash(led, 0.5, 4)
 retval=button.wait_for_press(int(wait_time))
