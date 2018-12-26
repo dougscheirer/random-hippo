@@ -140,7 +140,7 @@ amixer set PCM -- 100%
 
 while (true) ; do
 	PLAYIT=0
-	if [ $(date +'%H') -gt 16 ] && [$(date +'%H') -lt 22 ] ; then
+	if [ $(date +'%H') -gt 16 ] && [ $(date +'%H') -lt 22 ] ; then
 		PLAYIT=1
 	fi
 
