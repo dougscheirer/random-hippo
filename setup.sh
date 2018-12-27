@@ -9,6 +9,10 @@ function die()
 	exit 1
 }
 
+if [ "$(alias ll)" == "" ] ; then
+	echo "alias ll='ls -la'" > ~/.bash_aliases
+fi
+
 NOSYS=0
 if [ "$1" == "nosys" ] ; then
 	echo "Skipping wifi, raspi-config, and apt packages"
@@ -29,6 +33,12 @@ if [ $NOSYS -eq 0 ] ; then
 	# make sure apt is up to date and basic packages are installed
 	sudo apt-get update && sudo apt-get install vim git flite alsa-utils mpg321 python-gpiozero || die "Failed to install packages"
 fi
+
+# handy git aliases
+git config --global alias.st status
+git config --global alias.ci commit
+git config --global alias.lola "log --graph --decorate --oneline --all"
+
 
 # clone the source repo
 git clone https://github.com/dougscheirer/random-hippo || die "failed to get source repo"
