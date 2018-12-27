@@ -1,5 +1,10 @@
 #!/bin/bash
 
+function logit
+{
+	echo "$*" | logger
+}
+
 function say
 {
 	# write the output to a WAV file and play the file
