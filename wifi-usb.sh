@@ -5,7 +5,7 @@ PASS=$2
 
 if [ "$SSID" == "" ] || [ "$PASS" == "" ] ; then
 	echo -n SSID: 
-	read -s SSID
+	read SSID
 	echo
 
 	echo -n Password: 
